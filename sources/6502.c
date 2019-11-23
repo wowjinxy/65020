@@ -1,47 +1,37 @@
-/* vim: set tabstop=8 noexpandtab: */
-/*   ____  ______  ______   ____
-    /  _/_/\  __/_/\  __ \ /\_, \
-   /\  __ \ \___  \ \ \/\ \\//  /__
-   \ \_____\/\____/\ \_____\/\_____\
-MOS \/_____/\/___/  \/_____/\/_____/ CPU Emulator ----------------------------
-Copyright (C) 1999-2018 Manuel Sainz de Baranda y Goñi.
+/*      ____ ______ ______  ____
+       /  _//\  __//\  __ \/\_, \
+ ____ /\  __ \\___  \\ \/\ \//  /__ ___________________________________________
+|     \ \_____\\____/ \_____\\_____\                                           |
+|  MOS \/_____//___/ \/_____//_____/ CPU Emulator                              |
+|  Copyright (C) 1999-2020 Manuel Sainz de Baranda y Goñi.                     |
+|                                                                              |
+|  This emulator is free software: you can redistribute it and/or modify it    |
+|  under the terms of the GNU Lesser General Public License as published by    |
+|  the Free Software Foundation, either version 3 of the License, or (at your  |
+|  option) any later version.                                                  |
+|                                                                              |
+|  This emulator is distributed in the hope that it will be useful, but        |
+|  WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY  |
+|  or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public      |
+|  License for more details.                                                   |
+|                                                                              |
+|  You should have received a copy of the GNU Lesser General Public License    |
+|  along with this emulator. If not, see <http://www.gnu.org/licenses/>.       |
+|                                                                              |
+'=============================================================================*/
 
-This emulator is free software: you can redistribute it and/or modify it under
-the terms of the GNU General Public License as published  by the Free Software
-Foundation, either  version 3 of  the License, or  (at your option)  any later
-version.
+#ifndef M6502_CPU_DEPENDENCIES_HEADER
+#	include <Z/hardware/CPU/6502.h>
+#	include <Z/macros/tokens.h>
+#endif
 
-This emulator is distributed  in the hope that it will  be useful, but WITHOUT
-ANY WARRANTY; without even the  implied warranty of MERCHANTABILITY or FITNESS
-FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
-
-You should have received  a copy of the GNU General Public License  along with
-this emulator. If not, see <http://www.gnu.org/licenses/>.
---------------------------------------------------------------------------- */
-
-#if defined(CPU_6502_HIDE_API)
-#	define CPU_6502_API static
-#elif defined(CPU_6502_STATIC)
-#	define CPU_6502_API
+#ifdef M6502_CPU_STATIC
+#	define M6502_CPU_API
 #else
-#	define CPU_6502_API Z_API_EXPORT
+#	define M6502_CPU_API Z_API_EXPORT
 #endif
 
-#if defined(CPU_6502_WITH_MODULE_ABI) && !defined(CPU_6502_WITH_ABI)
-#	define CPU_6502_WITH_ABI
-#endif
-
-#ifdef CPU_6502_WITH_ABI
-#	if defined(CPU_6502_HIDE_ABI)
-#		define CPU_6502_ABI static
-#	elif defined(CPU_6502_STATIC)
-#		define CPU_6502_ABI
-#	else
-#		define CPU_6502_ABI Z_API_EXPORT
-#	endif
-#endif
-
-#ifdef CPU_6502_USE_LOCAL_HEADER
+#ifdef M6502_CPU_USE_LOCAL_HEADER
 #	include "6502.h"
 #else
 #	include <emulation/CPU/6502.h>
@@ -50,53 +40,59 @@ this emulator. If not, see <http://www.gnu.org/licenses/>.
 
 /* MARK: - Types */
 
-typedef zuint8 (* Instruction)(M6502 *object);
-typedef zuint8 (* ReadEA     )(M6502 *object);
-typedef void   (* WriteEA    )(M6502 *object, zuint8 value);
+typedef zuint8 (* Instruction)(M6502 *self);
+typedef zuint8 (* ReadEA     )(M6502 *self);
+typedef void   (* WriteEA    )(M6502 *self, zuint8 value);
 
 
-/* MARK: - Macros & Functions: Callback */
+/* MARK: - Macros & Functions: Callbacks */
 
 #define READ_8(address) \
-	object->read (object->context, (zuint16)(address))
+	self->read (self->context, (zuint16)(address))
 
 #define WRITE_8(address, value) \
-	object->write(object->context, (zuint16)(address), (zuint8)(value))
+	self->write(self->context, (zuint16)(address), (zuint8)(value))
 
 
-static Z_INLINE zuint16 read_16bit(M6502 *object, zuint16 address)
+static Z_INLINE zuint16 read_16bit(M6502 *self, zuint16 address)
 	{return (zuint16)(READ_8(address) | (zuint16)READ_8(address + 1) << 8);}
 
 
-#define READ_16( address)	   read_16bit (object, (zuint16)(address))
+#define READ_16( address)	   read_16bit(self, (zuint16)(address))
 #define READ_POINTER(pointer_name) READ_16(Z_6502_ADDRESS_##pointer_name##_POINTER)
 
 
-/* MARK: - Macros: Registers */
+/* MARK: - Macros: Instance Variables */
 
-#define PC object->state.Z_6502_STATE_MEMBER_PC
-#define S  object->state.Z_6502_STATE_MEMBER_S
-#define P  object->state.Z_6502_STATE_MEMBER_P
-#define A  object->state.Z_6502_STATE_MEMBER_A
-#define X  object->state.Z_6502_STATE_MEMBER_X
-#define Y  object->state.Z_6502_STATE_MEMBER_Y
-
-
-/* MARK: - Macros: Internal Bits */
-
-#define NMI object->state.Z_6502_STATE_MEMBER_NMI
-#define IRQ object->state.Z_6502_STATE_MEMBER_IRQ
-
-
-/* MARK: - Macros: Temporal Data */
-
-#define CYCLES	  object->cycles
-#define OPCODE	  object->opcode
-#define EA	  object->ea
-#define EA_CYCLES object->ea_cycles
+#define PC	  self->pc
+#define S	  self->s
+#define P	  self->p
+#define A	  self->a
+#define X	  self->x
+#define Y	  self->y
+#define IRQ	  self->irq
+#define NMI	  self->nmi
+#define CYCLES	  self->cycles
+#define OPCODE	  self->opcode
+#define EA	  self->ea
+#define EA_CYCLES self->ea_cycles
 
 
-/* MARK: - Macros: Flags */
+/* MARK: - Macros: Flags
+
+Status (P register):
+.-----------------.
+| 7 6 5 4 3 2 1 0 |
+| N V - B D I Z C |
+'-|-|-|-|-|-|-|-|-'
+  | | | | | | | '-> carry
+  | | | | | | '---> zero
+  | | | | | '-----> interrupt (IRQ disable)
+  | | | | '-------> decimal (use BCD for arithmetics)
+  | | | '---------> break
+  | | '-----------> (ignored)
+  | '-------------> overflow
+  '---------------> negative */
 
 #define NP 128
 #define VP  64
@@ -119,7 +115,7 @@ static Z_INLINE zuint16 read_16bit(M6502 *object, zuint16 address)
 #define POP_8	      READ_8 (Z_6502_ADDRESS_STACK + ++S)
 
 
-static Z_INLINE void push_16bit(M6502 *object, zuint16 value)
+static Z_INLINE void push_16bit(M6502 *self, zuint16 value)
 	{
 	WRITE_8(Z_6502_ADDRESS_STACK | S, value >> 8);
 	WRITE_8(Z_6502_ADDRESS_STACK | (zuint8)(S - 1), value);
@@ -127,7 +123,7 @@ static Z_INLINE void push_16bit(M6502 *object, zuint16 value)
 	}
 
 
-static Z_INLINE zuint16 pop_16bit(M6502 *object)
+static Z_INLINE zuint16 pop_16bit(M6502 *self)
 	{
 	zuint16 result = (zuint16)
 	(	    READ_8(Z_6502_ADDRESS_STACK | (zuint8)(S + 1)) |
@@ -138,8 +134,8 @@ static Z_INLINE zuint16 pop_16bit(M6502 *object)
 	}
 
 
-#define PUSH_16(value) push_16bit(object, value)
-#define POP_16	       pop_16bit(object)
+#define PUSH_16(value) push_16bit(self, value)
+#define POP_16	       pop_16bit(self)
 
 
 /* MARK: - Addressing Helpers */
@@ -156,20 +152,20 @@ static Z_INLINE zuint16 pop_16bit(M6502 *object)
 #define  INDIRECT_X_ADDRESS READ_16((zuint8)(READ_BYTE_OPERAND + X))
 #define  INDIRECT_Y_ADDRESS READ_16(READ_BYTE_OPERAND) + Y
 
-#define EA_READER(name) static zuint8 read_##name (M6502 *object)
-#define EA_WRITER(name) static void   write_##name(M6502 *object, zuint8 value)
+#define EA_READER(name) static zuint8 read_##name (M6502 *self)
+#define EA_WRITER(name) static void   write_##name(M6502 *self, zuint8 value)
 
-EA_READER(accumulator)	 {EA_CYCLES = 2; PC++; return A;			 }
-EA_READER(immediate)	 {EA_CYCLES = 2; return READ_BYTE_OPERAND;		 }
-EA_READER(zero_page)	 {EA_CYCLES = 3; return READ_8(ZERO_PAGE_ADDRESS       );}
-EA_READER(zero_page_x)	 {EA_CYCLES = 4; return READ_8(ZERO_PAGE_X_ADDRESS     );}
-EA_READER(zero_page_y)	 {EA_CYCLES = 4; return READ_8(ZERO_PAGE_Y_ADDRESS     );}
-EA_READER(absolute)	 {EA_CYCLES = 4; return READ_8(ABSOLUTE_ADDRESS	       );}
-EA_READER(indirect_x)	 {EA_CYCLES = 6; return READ_8(INDIRECT_X_ADDRESS      );}
-EA_READER(g_zero_page)	 {EA_CYCLES = 5; return READ_8(EA = ZERO_PAGE_ADDRESS  );}
+EA_READER(accumulator  ) {EA_CYCLES = 2; PC++; return A;			 }
+EA_READER(immediate    ) {EA_CYCLES = 2; return READ_BYTE_OPERAND;		 }
+EA_READER(zero_page    ) {EA_CYCLES = 3; return READ_8(ZERO_PAGE_ADDRESS       );}
+EA_READER(zero_page_x  ) {EA_CYCLES = 4; return READ_8(ZERO_PAGE_X_ADDRESS     );}
+EA_READER(zero_page_y  ) {EA_CYCLES = 4; return READ_8(ZERO_PAGE_Y_ADDRESS     );}
+EA_READER(absolute     ) {EA_CYCLES = 4; return READ_8(ABSOLUTE_ADDRESS	       );}
+EA_READER(indirect_x   ) {EA_CYCLES = 6; return READ_8(INDIRECT_X_ADDRESS      );}
+EA_READER(g_zero_page  ) {EA_CYCLES = 5; return READ_8(EA = ZERO_PAGE_ADDRESS  );}
 EA_READER(g_zero_page_x) {EA_CYCLES = 6; return READ_8(EA = ZERO_PAGE_X_ADDRESS);}
-EA_READER(g_absolute)	 {EA_CYCLES = 6; return READ_8(EA = ABSOLUTE_ADDRESS   );}
-EA_READER(g_absolute_x)	 {EA_CYCLES = 7; return READ_8(EA = ABSOLUTE_X_ADDRESS );}
+EA_READER(g_absolute   ) {EA_CYCLES = 6; return READ_8(EA = ABSOLUTE_ADDRESS   );}
+EA_READER(g_absolute_x ) {EA_CYCLES = 7; return READ_8(EA = ABSOLUTE_X_ADDRESS );}
 
 
 EA_READER(penalized_absolute_x)
@@ -199,14 +195,14 @@ EA_READER(penalized_indirect_y)
 	}
 
 
-EA_WRITER(zero_page)   {EA_CYCLES = 3; WRITE_8(ZERO_PAGE_ADDRESS,   value);}
+EA_WRITER(zero_page  ) {EA_CYCLES = 3; WRITE_8(ZERO_PAGE_ADDRESS,   value);}
 EA_WRITER(zero_page_x) {EA_CYCLES = 4; WRITE_8(ZERO_PAGE_X_ADDRESS, value);}
 EA_WRITER(zero_page_y) {EA_CYCLES = 4; WRITE_8(ZERO_PAGE_Y_ADDRESS, value);}
-EA_WRITER(absolute)    {EA_CYCLES = 4; WRITE_8(ABSOLUTE_ADDRESS,    value);}
-EA_WRITER(absolute_x)  {EA_CYCLES = 5; WRITE_8(ABSOLUTE_X_ADDRESS,  value);}
-EA_WRITER(absolute_y)  {EA_CYCLES = 5; WRITE_8(ABSOLUTE_Y_ADDRESS,  value);}
-EA_WRITER(indirect_x)  {EA_CYCLES = 6; WRITE_8(INDIRECT_X_ADDRESS,  value);}
-EA_WRITER(indirect_y)  {EA_CYCLES = 6; WRITE_8(INDIRECT_Y_ADDRESS,  value);}
+EA_WRITER(absolute   ) {EA_CYCLES = 4; WRITE_8(ABSOLUTE_ADDRESS,    value);}
+EA_WRITER(absolute_x ) {EA_CYCLES = 5; WRITE_8(ABSOLUTE_X_ADDRESS,  value);}
+EA_WRITER(absolute_y ) {EA_CYCLES = 5; WRITE_8(ABSOLUTE_Y_ADDRESS,  value);}
+EA_WRITER(indirect_x ) {EA_CYCLES = 6; WRITE_8(INDIRECT_X_ADDRESS,  value);}
+EA_WRITER(indirect_y ) {EA_CYCLES = 6; WRITE_8(INDIRECT_Y_ADDRESS,  value);}
 
 
 /* MARK: - J/K Addressing Tables
@@ -260,29 +256,29 @@ static WriteEA const write_k_table[8] = {
 
 /* MARK: - G/H Addressing Tables
 
-		      .---------------------------------------------------------------.
-		      |  000  |  001  |  010  |  011  |  100  |  101  |  110  |  111  |
-		      |-------+-------+-------+-------+-------+-------+-------+-------|
-		      |  asl  |  rol  |  lsr  |  ror  |  stx  |  ldx  |  dec  |  inc  |
-		      |-------+-------+-------+-------+-------+-------+-------+-------|
-		      |   G   |   G   |   G   |   G   |   H   |   H   |   G   |   G   |
-.---------------------+-------+-------+-------+-------+-------+-------+-------+-------|
-| 000 | Immediate     |       |       |       |       |       |   2   |       |       |
-|-----+---------------+-------+-------+-------+-------+-------+-------+-------+-------|
-| 001 | Zero Page     |   5   |   5   |   5   |   5   |   3   |   3   |   5   |   5   |
-|-----+---------------+-------+-------+-------+-------+-------+-------+-------+-------|
-| 010 | Accumulator   |   2   |   2   |   2   |   2   |       |       |       |       |
-|-----+---------------+-------+-------+-------+-------+-------+-------+-------+-------|
-| 011 | Absolute      |   6   |   6   |   6   |   6   |   4   |   4   |   6   |   6   |
-|-----+---------------+-------+-------+-------+-------+-------+-------+-------+-------|
-| 100 |		      |       |       |       |       |       |       |       |       |
-|-----+---------------+-------+-------+-------+-------+-------+-------+-------+-------|
-| 101 | Zero Page,X/Y |  6/x  |  6/x  |  6/x  |  6/x  |  4/y  |  4/y  |   6   |   6   |
-|-----+---------------+-------+-------+-------+-------+-------+-------+-------+-------|
-| 110 |		      |       |       |       |       |       |       |       |       |
-|-----+---------------+-------+-------+-------+-------+-------+-------+-------+-------|
-| 111 | Absolute,X/Y  |   7   |   7   |   7   |   7   |       | 4+1/y |   7   |   7   |
-'------------------------------------------------------------------------------------*/
+		      .-----------------------------------------------.
+		      | 000 | 001 | 010 | 011 | 100 | 101 | 110 | 111 |
+		      |-----+-----+-----+-----+-----+-----+-----+-----|
+		      | asl | rol | lsr | ror | stx | ldx | dec | inc |
+		      |-----+-----+-----+-----+-----+-----+-----+-----|
+		      |  G  |  G  |  G  |  G  |  H  |  H  |  G  |  G  |
+.---------------------+-----+-----+-----+-----+-----+-----+-----+-----|
+| 000 | Immediate     |     |     |     |     |     |  2  |     |     |
+|-----+---------------+-----+-----+-----+-----+-----+-----+-----+-----|
+| 001 | Zero Page     |  5  |  5  |  5  |  5  |  3  |  3  |  5  |  5  |
+|-----+---------------+-----+-----+-----+-----+-----+-----+-----+-----|
+| 010 | Accumulator   |  2  |  2  |  2  |  2  |     |     |     |     |
+|-----+---------------+-----+-----+-----+-----+-----+-----+-----+-----|
+| 011 | Absolute      |  6  |  6  |  6  |  6  |  4  |  4  |  6  |  6  |
+|-----+---------------+-----+-----+-----+-----+-----+-----+-----+-----|
+| 100 |		      |     |     |     |     |     |     |     |     |
+|-----+---------------+-----+-----+-----+-----+-----+-----+-----+-----|
+| 101 | Zero Page,X/Y | 6/x | 6/x | 6/x | 6/x | 4/y | 4/y |  6  |  6  |
+|-----+---------------+-----+-----+-----+-----+-----+-----+-----+-----|
+| 110 |		      |     |     |     |     |     |     |     |     |
+|-----+---------------+-----+-----+-----+-----+-----+-----+-----+-----|
+| 111 | Absolute,X/Y  |  7  |  7  |  7  |  7  |     |4+1/y|  7  |  7  |
+'--------------------------------------------------------------------*/
 
 static ReadEA const read_g_table[8] = {
 	/* 0 */ NULL,
@@ -364,31 +360,31 @@ static WriteEA const write_q_table[6] = {
 /* MARK: - Macros: Addressing Accessors */
 
 #define EA_INDEX       (OPCODE & 28) >> 2
-#define READ_J	       read_j_table [EA_INDEX](object)
-#define READ_G	       read_g_table [EA_INDEX](object)
-#define READ_H	       read_h_table [EA_INDEX](object)
-#define READ_Q	       read_q_table [EA_INDEX](object)
-#define WRITE_K(value) write_k_table[EA_INDEX](object, value)
-#define WRITE_H(value) write_h_table[EA_INDEX](object, value)
-#define WRITE_Q(value) write_q_table[EA_INDEX](object, value)
+#define READ_J	       read_j_table [EA_INDEX](self)
+#define READ_G	       read_g_table [EA_INDEX](self)
+#define READ_H	       read_h_table [EA_INDEX](self)
+#define READ_Q	       read_q_table [EA_INDEX](self)
+#define WRITE_K(value) write_k_table[EA_INDEX](self, value)
+#define WRITE_H(value) write_h_table[EA_INDEX](self, value)
+#define WRITE_Q(value) write_q_table[EA_INDEX](self, value)
 #define WRITE_G(value) if (EA_CYCLES == 2) A = value; else WRITE_8(EA, value);
 
 
 /* MARK: - Macros: Reusable Code */
 
-#define INSTRUCTION(name) static zuint8 name(M6502 *object)
+#define INSTRUCTION(name) static zuint8 name(M6502 *self)
 
 
-#define COMPARE(register, ea_table)						  \
-	zuint8 v = READ_##ea_table;						  \
-	zuint8 result = register - v;						  \
-										  \
-	P = (zuint8)								  \
-		((P & ~NZCP)	       /* VP, XP, BP, DP, IP unchanged	       */ \
-		 | (result & NP)       /* NP = result.7			       */ \
-		 | ZP_ZERO(result)     /* ZP = 1 if result = 0, else ZP = 0    */ \
-		 | !!(register >= v)); /* CP = 1 if register >= v, else CP = 0 */ \
-										  \
+#define COMPARE(register, ea_table)						\
+	zuint8 v = READ_##ea_table;						\
+	zuint8 result = register - v;						\
+										\
+	P = (zuint8)								\
+		((P & ~NZCP)	 |   /* VP, XP, BP, DP, IP unchanged	     */ \
+		 (result & NP)   |   /* NP = result.7			     */ \
+		 ZP_ZERO(result) |   /* ZP = 1 if result = 0, else ZP = 0    */ \
+		 !!(register >= v)); /* CP = 1 if register >= v, else CP = 0 */ \
+										\
 	return EA_CYCLES;
 
 
@@ -424,17 +420,17 @@ static WriteEA const write_q_table[6] = {
 
 
 /* MARK: - Instructions: Load/Store Operations
-.------------------------------------------.
-|	       Opcode	 Flags		   |
-|  Assembly    76543210  nvxbdizc  Cycles  |
-|  --------------------------------------  |
-|  lda J       101jjj01  n.....z.  J	   |
-|  ldx H       101ppp10  ........  H	   |
-|  ldy Q       101qqq00  ........  Q	   |
-|  sta K       100kkk01  ........  K	   |
-|  stx H       100ppp10  ........  H	   |
-|  sty Q       100qqq00  ........  Q	   |
-'-----------------------------------------*/
+.----------------------------------------.
+|	     Opcode    Status		 |
+|  Assembly  76543210  nvxbdizc  Cycles  |
+|  --------  --------  --------  ------  |
+|  lda J     101jjj01  n.....z.  J	 |
+|  ldx H     101hhh10  ........  H	 |
+|  ldy Q     101qqq00  ........  Q	 |
+|  sta K     100kkk01  ........  K	 |
+|  stx H     100hhh10  ........  H	 |
+|  sty Q     100qqq00  ........  Q	 |
+'---------------------------------------*/
 
 INSTRUCTION(lda_J) {A = READ_J; SET_P_NZ(A); return EA_CYCLES;}
 INSTRUCTION(ldx_H) {X = READ_H; SET_P_NZ(X); return EA_CYCLES;}
@@ -445,15 +441,15 @@ INSTRUCTION(sty_Q) {WRITE_Q(Y);		     return EA_CYCLES;}
 
 
 /* MARK: - Instructions: Register Transfers
-.------------------------------------------.
-|	       Opcode	 Flags		   |
-|  Assembly    76543210  nvxbdizc  Cycles  |
-|  --------------------------------------  |
-|  tax	       <  AA  >  n.....z.  2	   |
-|  tay	       <  A8  >  n.....z.  2	   |
-|  txa	       <  8A  >  n.....z.  2	   |
-|  tya	       <  98  >  n.....z.  2	   |
-'-----------------------------------------*/
+.----------------------------------------.
+|	     Opcode    Status		 |
+|  Assembly  76543210  nvxbdizc  Cycles  |
+|  --------  --------  --------  ------  |
+|  tax	     <--AA-->  n.....z.  2	 |
+|  tay	     <--A8-->  n.....z.  2	 |
+|  txa	     <--8A-->  n.....z.  2	 |
+|  tya	     <--98-->  n.....z.  2	 |
+'---------------------------------------*/
 
 INSTRUCTION(tax) {PC++; X = A; SET_P_NZ(X); return 2;}
 INSTRUCTION(tay) {PC++; Y = A; SET_P_NZ(Y); return 2;}
@@ -462,17 +458,17 @@ INSTRUCTION(tya) {PC++; A = Y; SET_P_NZ(A); return 2;}
 
 
 /* MARK: - Instructions: Stack Operations
-.------------------------------------------.
-|	       Opcode	 Flags		   |
-|  Assembly    76543210  nvxbdizc  Cycles  |
-|  --------------------------------------  |
-|  tsx	       <  BA  >  n.....z.  2	   |
-|  txs	       <  9A  >  ........  2	   |
-|  pha	       <  48  >  ........  3	   |
-|  php	       <  08  >  ........  3	   |
-|  pla	       <  68  >  n.....z.  4	   |
-|  plp	       <  28  >  ********  4	   |
-'-----------------------------------------*/
+.----------------------------------------.
+|	     Opcode    Status		 |
+|  Assembly  76543210  nvxbdizc  Cycles  |
+|  --------  --------  --------  ------  |
+|  tsx	     <--BA-->  n.....z.  2	 |
+|  txs	     <--9A-->  ........  2	 |
+|  pha	     <--48-->  ........  3	 |
+|  php	     <--08-->  ........  3	 |
+|  pla	     <--68-->  n.....z.  4	 |
+|  plp	     <--28-->  ********  4	 |
+'---------------------------------------*/
 
 INSTRUCTION(tsx) {PC++; X = S; SET_P_NZ(X);	return 2;}
 INSTRUCTION(txs) {PC++; S = X;			return 2;}
@@ -483,15 +479,15 @@ INSTRUCTION(plp) {PC++; P = POP_8;		return 4;}
 
 
 /* MARK: - Instructions: Logical
-.------------------------------------------.
-|	       Opcode	 Flags		   |
-|  Assembly    76543210  nvxbdizc  Cycles  |
-|  --------------------------------------  |
-|  and J       001jjj01  n.....z.  J	   |
-|  eor J       010jjj01  n.....z.  J	   |
-|  ora J       000jjj01  n.....z.  J	   |
-|  bit Q       001qqq00  **....z.  Q	   |
-'-----------------------------------------*/
+.----------------------------------------.
+|	     Opcode    Status		 |
+|  Assembly  76543210  nvxbdizc  Cycles  |
+|  --------  --------  --------  ------  |
+|  and J     001jjj01  n.....z.  J	 |
+|  eor J     010jjj01  n.....z.  J	 |
+|  ora J     000jjj01  n.....z.  J	 |
+|  bit Q     001qqq00  **....z.  Q	 |
+'---------------------------------------*/
 
 INSTRUCTION(and_J) {A &= READ_J; SET_P_NZ(A); return EA_CYCLES;}
 INSTRUCTION(eor_J) {A ^= READ_J; SET_P_NZ(A); return EA_CYCLES;}
@@ -502,8 +498,8 @@ INSTRUCTION(bit_Q)
 	{
 	zuint8 v = READ_Q;
 
-	P =	(P & ~(NP | VP | ZP))
-		| (v & (NP | VP)); /* TODO: Check if this is correct. */
+	P =	(P & ~(NP | VP | ZP)) |
+		(v &  (NP | VP)); /* TODO: Check if this is correct. */
 
 	if (!(v & A)) P |= ZP;
 	return EA_CYCLES;
@@ -511,16 +507,16 @@ INSTRUCTION(bit_Q)
 
 
 /* MARK: - Instructions: Arithmetic
-.------------------------------------------.
-|	       Opcode	 Flags		   |
-|  Assembly    76543210  nvxbdizc  Cycles  |
-|  --------------------------------------  |
-|  cmp J       110jjj01  n.....zc  J	   |
-|  cpx Q       111qqq00  n.....zc  Q	   |
-|  cpy Q       110qqq00  n.....zc  Q	   |
-|  adc J       011jjj01  nv....zc  J	   |
-|  sbc J       111jjj01  nv....zc  J	   |
-'-----------------------------------------*/
+.----------------------------------------.
+|	     Opcode    Status		 |
+|  Assembly  76543210  nvxbdizc  Cycles  |
+|  --------  --------  --------  ------  |
+|  cmp J     110jjj01  n.....zc  J	 |
+|  cpx Q     111qqq00  n.....zc  Q	 |
+|  cpy Q     110qqq00  n.....zc  Q	 |
+|  adc J     011jjj01  nv....zc  J	 |
+|  sbc J     111jjj01  nv....zc  J	 |
+'---------------------------------------*/
 
 INSTRUCTION(cmp_J) {COMPARE(A, J)}
 INSTRUCTION(cpx_Q) {COMPARE(X, Q)}
@@ -579,7 +575,7 @@ INSTRUCTION(sbc_J)
 		if (l & 0x10)		      {l -= 6; h--;}
 		if ((A ^ v) & (A ^ t) & 0x80) P |= VP;
 		if (!(t >> 8))		      P |= CP;
-		if (!(t << 8))		      P |= ZP;
+		if (!(t << 8))		      P |= ZP; /* MAL */
 		if (t & 0x80)		      P |= NP;
 		if (h & 0x0100)		      h -= 0x60;
 
@@ -601,36 +597,36 @@ INSTRUCTION(sbc_J)
 
 
 /* MARK: - Instructions: Increments & Decrements
-.------------------------------------------.
-|	       Opcode	 Flags		   |
-|  Assembly    76543210  nvxbdizc  Cycles  |
-|  --------------------------------------  |
-|  inc G       111ggg10  n.....z.  G	   |
-|  inx	       <  E8  >  n.....z.  2	   |
-|  iny	       <  C8  >  n.....z.  2	   |
-|  dec G       110ggg10  n.....z.  G	   |
-|  dex	       <  CA  >  n.....z.  2	   |
-|  dey	       <  88  >  n.....z.  2	   |
-'-----------------------------------------*/
+.----------------------------------------.
+|	     Opcode    Status		 |
+|  Assembly  76543210  nvxbdizc  Cycles  |
+|  --------  --------  --------  ------  |
+|  inc G     111ggg10  n.....z.  G	 |
+|  inx	     <--E8-->  n.....z.  2	 |
+|  iny	     <--C8-->  n.....z.  2	 |
+|  dec G     110ggg10  n.....z.  G	 |
+|  dex	     <--CA-->  n.....z.  2	 |
+|  dey	     <--88-->  n.....z.  2	 |
+'---------------------------------------*/
 
 INSTRUCTION(inc_G) {INC_DEC(+)			     }
-INSTRUCTION(inx)   {PC++; X++; SET_P_NZ(X); return 2;}
-INSTRUCTION(iny)   {PC++; Y++; SET_P_NZ(Y); return 2;}
+INSTRUCTION(inx  ) {PC++; X++; SET_P_NZ(X); return 2;}
+INSTRUCTION(iny  ) {PC++; Y++; SET_P_NZ(Y); return 2;}
 INSTRUCTION(dec_G) {INC_DEC(-)			     }
-INSTRUCTION(dex)   {PC++; X--; SET_P_NZ(X); return 2;}
-INSTRUCTION(dey)   {PC++; Y--; SET_P_NZ(Y); return 2;}
+INSTRUCTION(dex  ) {PC++; X--; SET_P_NZ(X); return 2;}
+INSTRUCTION(dey  ) {PC++; Y--; SET_P_NZ(Y); return 2;}
 
 
 /* MARK: - Instructions: Shifts
-.------------------------------------------.
-|	       Opcode	 Flags		   |
-|  Assembly    76543210  nvxbdizc  Cycles  |
-|  --------------------------------------  |
-|  asl G       000ggg10  n.....z*  G	   |
-|  lsr G       010ggg10  0.....z*  G	   |
-|  rol G       001ggg10  n.....z*  G	   |
-|  ror G       011ggg10  n.....z*  G	   |
-'-----------------------------------------*/
+.----------------------------------------.
+|	     Opcode    Status		 |
+|  Assembly  76543210  nvxbdizc  Cycles  |
+|  --------  --------  --------  ------  |
+|  asl G     000ggg10  n.....z*  G	 |
+|  lsr G     010ggg10  0.....z*  G	 |
+|  rol G     001ggg10  n.....z*  G	 |
+|  ror G     011ggg10  n.....z*  G	 |
+'---------------------------------------*/
 
 
 INSTRUCTION(asl_G)
@@ -675,34 +671,34 @@ INSTRUCTION(ror_G)
 
 /* MARK: - Instructions: Jumps & Calls
 .----------------------------------------------------------.
-|	       0       1       2	 Flags		   |
+|	       0       1       2	 Status		   |
 |  Assembly    765432107654321076543210  nvxbdizc  Cycles  |
-|  ------------------------------------------------------  |
-|  jmp WORD    <  4C  ><     WORD     >  ........  3	   |
-|  jmp (WORD)  <  6C  ><     WORD     >  ........  5	   |
-|  jsr WORD    <  20  ><     WORD     >  ........  6	   |
-|  rts	       <  60  >			 ........  6	   |
+|  ----------  ------------------------  --------  ------  |
+|  jmp WORD    <--4C--><-----WORD----->  ........  3	   |
+|  jmp (WORD)  <--6C--><-----WORD----->  ........  5	   |
+|  jsr WORD    <--20--><-----WORD----->  ........  6	   |
+|  rts	       <--60-->			 ........  6	   |
 '---------------------------------------------------------*/
 
-INSTRUCTION(jmp_WORD)  {PC = READ_16(PC + 1);		       return 3;}
+INSTRUCTION(jmp_WORD ) {PC = READ_16(PC + 1);		       return 3;}
 INSTRUCTION(jmp_vWORD) {PC = READ_16(READ_16(PC + 1));	       return 5;}
-INSTRUCTION(jsr_WORD)  {PUSH_16(PC + 2); PC = READ_16(PC + 1); return 6;}
-INSTRUCTION(rts)       {PC = POP_16 + 1;		       return 6;}
+INSTRUCTION(jsr_WORD ) {PUSH_16(PC + 2); PC = READ_16(PC + 1); return 6;}
+INSTRUCTION(rts	     ) {PC = POP_16 + 1;		       return 6;}
 
 
 /* MARK: - Instructions: Branches
 .-----------------------------------------------------.
-|	       0       1	 Flags		      |
+|	       0       1	 Status		      |
 |  Assembly    7654321076543210  nvxbdizc  Cycles     |
-|  -------------------------------------------------  |
-|  bcc OFFSET  <  90  ><OFFSET>  ........  2 / 3 / 4  |
-|  bcs OFFSET  <  B0  ><OFFSET>  ........  2 / 3 / 4  |
-|  beq OFFSET  <  F0  ><OFFSET>  ........  2 / 3 / 4  |
-|  bmi OFFSET  <  30  ><OFFSET>  ........  2 / 3 / 4  |
-|  bne OFFSET  <  D0  ><OFFSET>  ........  2 / 3 / 4  |
-|  bpl OFFSET  <  10  ><OFFSET>  ........  2 / 3 / 4  |
-|  bvc OFFSET  <  50  ><OFFSET>  ........  2 / 3 / 4  |
-|  bvs OFFSET  <  70  ><OFFSET>  ........  2 / 3 / 4  |
+|  ----------  ----------------  --------  ---------  |
+|  bcc OFFSET  <--90--><OFFSET>  ........  2 / 3 / 4  |
+|  bcs OFFSET  <--B0--><OFFSET>  ........  2 / 3 / 4  |
+|  beq OFFSET  <--F0--><OFFSET>  ........  2 / 3 / 4  |
+|  bmi OFFSET  <--30--><OFFSET>  ........  2 / 3 / 4  |
+|  bne OFFSET  <--D0--><OFFSET>  ........  2 / 3 / 4  |
+|  bpl OFFSET  <--10--><OFFSET>  ........  2 / 3 / 4  |
+|  bvc OFFSET  <--50--><OFFSET>  ........  2 / 3 / 4  |
+|  bvs OFFSET  <--70--><OFFSET>  ........  2 / 3 / 4  |
 '----------------------------------------------------*/
 
 INSTRUCTION(bcc_OFFSET) {BRANCH_IF_CLEAR(CP);}
@@ -716,18 +712,18 @@ INSTRUCTION(bvs_OFFSET) {BRANCH_IF_SET	(VP);}
 
 
 /* MARK: - Instructions: Status Flag Changes
-.------------------------------------------.
-|	       Opcode	 Flags		   |
-|  Assembly    76543210  nvxbdizc  Cycles  |
-|  --------------------------------------  |
-|  clc	       <  18  >  .......0  2	   |
-|  cld	       <  D8  >  ....0...  2	   |
-|  cli	       <  58  >  .....0..  2	   |
-|  clv	       <  B8  >  .0......  2	   |
-|  sec	       <  38  >  .......1  2	   |
-|  sed	       <  F8  >  ....1...  2	   |
-|  sei	       <  78  >  .....1..  2	   |
-'-----------------------------------------*/
+.----------------------------------------.
+|	     Opcode    Status		 |
+|  Assembly  76543210  nvxbdizc  Cycles  |
+|  --------  --------  --------  ------  |
+|  clc	     <--18-->  .......0  2	 |
+|  cld	     <--D8-->  ....0...  2	 |
+|  cli	     <--58-->  .....0..  2	 |
+|  clv	     <--B8-->  .0......  2	 |
+|  sec	     <--38-->  .......1  2	 |
+|  sed	     <--F8-->  ....1...  2	 |
+|  sei	     <--78-->  .....1..  2	 |
+'---------------------------------------*/
 
 INSTRUCTION(clc) {PC++; P &= ~CP; return 2;}
 INSTRUCTION(cld) {PC++; P &= ~DP; return 2;}
@@ -739,14 +735,14 @@ INSTRUCTION(sei) {PC++; P |=  IP; return 2;}
 
 
 /* MARK: - Instructions: System Functions
-.------------------------------------------.
-|	       Opcode	 Flags		   |
-|  Assembly    76543210  nvxbdizc  Cycles  |
-|  --------------------------------------  |
-|  nop	       <  EA  >  ........  2	   |
-|  rti	       <  40  >  ********  6	   |
-|  brk	       <  00  >  .....1..  7	   |
-'-----------------------------------------*/
+.----------------------------------------.
+|	     Opcode    Status		 |
+|  Assembly  76543210  nvxbdizc  Cycles  |
+|  --------  --------  --------  ------  |
+|  nop	     <--EA-->  ........  2	 |
+|  rti	     <--40-->  ********  6	 |
+|  brk	     <--00-->  .....1..  7	 |
+'---------------------------------------*/
 
 INSTRUCTION(nop) {PC++;			  return 2;}
 INSTRUCTION(rti) {P = POP_8; PC = POP_16; return 6;}
@@ -754,7 +750,7 @@ INSTRUCTION(rti) {P = POP_8; PC = POP_16; return 6;}
 
 INSTRUCTION(brk)
 	{
-	READ_8 (PC + 1); /* BRK padding byte, ignored but the access is emulated */
+	READ_8 (PC + 1); /* BRK padding byte. Ignored, but the access is emulated. */
 	PUSH_16(PC + 2);
 	PUSH_8(P | BP);
 	P |=  BP | IP;
@@ -788,35 +784,32 @@ static Instruction const instruction_table[256] = {
 };
 
 
-/* MARK: - Main Functions */
+/* MARK: - Public Functions */
 
-CPU_6502_API void m6502_power(M6502 *object, zboolean state)
+
+M6502_CPU_API void m6502_power(M6502 *self, zboolean state)
 	{
 	if (state)
 		{
-		PC = Z_6502_VALUE_AFTER_POWER_ON_PC;
-		S  = Z_6502_VALUE_AFTER_POWER_ON_S;
-		P  = Z_6502_VALUE_AFTER_POWER_ON_P;
-		A  = Z_6502_VALUE_AFTER_POWER_ON_A;
-		X  = Z_6502_VALUE_AFTER_POWER_ON_X;
-		Y  = Z_6502_VALUE_AFTER_POWER_ON_Y;
-		IRQ = NMI = FALSE;
+		PC = A = X = Y = IRQ = NMI = 0;
+		S  = 0xFD;
+		P  = 0x36;
 		}
 
 	else PC = S = P = A = X = Y = IRQ = NMI = 0;
 	}
 
 
-CPU_6502_API void m6502_reset(M6502 *object)
+M6502_CPU_API void m6502_reset(M6502 *self)
 	{
 	PC = READ_POINTER(RESET);
-	S = Z_6502_VALUE_AFTER_POWER_ON_S;
-	P = Z_6502_VALUE_AFTER_POWER_ON_P;
-	IRQ = NMI = FALSE;
+	S = 0xFD;
+	P = 0x36;
+	IRQ = NMI = 0;
 	}
 
 
-CPU_6502_API zusize m6502_run(M6502 *object, zusize cycles)
+M6502_CPU_API zusize m6502_run(M6502 *self, zusize cycles)
 	{
 	/*-------------.
 	| Clear cycles |
@@ -860,59 +853,15 @@ CPU_6502_API zusize m6502_run(M6502 *object, zusize cycles)
 		/*-----------------------------------------------.
 		| Execute instruction and update consumed cycles |
 		'-----------------------------------------------*/
-		CYCLES += instruction_table[OPCODE = READ_8(PC)](object);
+		CYCLES += instruction_table[OPCODE = READ_8(PC)](self);
 		}
 
 	return CYCLES;
 	}
 
 
-CPU_6502_API void m6502_nmi(M6502 *object)		   {NMI = TRUE ;}
-CPU_6502_API void m6502_irq(M6502 *object, zboolean state) {IRQ = state;}
-
-
-/* MARK: - ABI */
-
-#ifdef CPU_6502_WITH_ABI
-
-	static ZCPUEmulatorExport const exports[5] = {
-		{Z_EMULATOR_FUNCTION_POWER, {(void (*)(void))m6502_power}},
-		{Z_EMULATOR_FUNCTION_RESET, {(void (*)(void))m6502_reset}},
-		{Z_EMULATOR_FUNCTION_RUN,   {(void (*)(void))m6502_run  }},
-		{Z_EMULATOR_FUNCTION_NMI,   {(void (*)(void))m6502_nmi  }},
-		{Z_EMULATOR_FUNCTION_IRQ,   {(void (*)(void))m6502_irq  }}
-	};
-
-	static ZCPUEmulatorInstanceImport const instance_imports[2] = {
-		{Z_EMULATOR_FUNCTION_READ_8BIT,  Z_OFFSET_OF(M6502, read )},
-		{Z_EMULATOR_FUNCTION_WRITE_8BIT, Z_OFFSET_OF(M6502, write)}
-	};
-
-	CPU_6502_ABI ZCPUEmulatorABI const abi_emulation_cpu_6502 = {
-		/* dependency_count	 */ 0,
-		/* dependencies		 */ NULL,
-		/* export_count		 */ 5,
-		/* exports		 */ exports,
-		/* instance_size	 */ sizeof(M6502),
-		/* instance_state_offset */ Z_OFFSET_OF(M6502, state),
-		/* instance_state_size	 */ sizeof(Z6502State),
-		/* instance_import_count */ 2,
-		/* instance_imports	 */ instance_imports
-	};
-
-#endif
-
-#ifdef CPU_6502_WITH_MODULE_ABI
-
-#	ifndef CPU_6502_DEPENDENCIES_H
-#		include <Z/ABIs/generic/module.h>
-#	endif
-
-	static ZModuleUnit const unit = {"6502", "6502", Z_VERSION(0, 1, 0), &abi_emulation_cpu_6502};
-	static ZModuleDomain const domain = {"Emulation.CPU", Z_VERSION(1, 0, 0), 1, &unit};
-	Z_API_WEAK_EXPORT ZModuleABI const __module_abi__ = {1, &domain};
-
-#endif
+M6502_CPU_API void m6502_nmi(M6502 *self)		  {NMI = TRUE ;}
+M6502_CPU_API void m6502_irq(M6502 *self, zboolean state) {IRQ = state;}
 
 
 /* 6502.c EOF */

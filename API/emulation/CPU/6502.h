@@ -1,31 +1,44 @@
-/*   ____  ______  ______   ____
-    /  _/_/\  __/_/\  __ \ /\_, \
-   /\  __ \ \___  \ \ \/\ \\//  /__
-   \ \_____\/\____/\ \_____\/\_____\
-MOS \/_____/\/___/  \/_____/\/_____/ CPU Emulator ----------------------------
-Copyright (C) 1999-2018 Manuel Sainz de Baranda y Goñi.
+/*      ____ ______ ______  ____
+       /  _//\  __//\  __ \/\_, \
+ ____ /\  __ \\___  \\ \/\ \//  /__ ___________________________________________
+|     \ \_____\\____/ \_____\\_____\                                           |
+|  MOS \/_____//___/ \/_____//_____/ CPU Emulator                              |
+|  Copyright (C) 1999-2020 Manuel Sainz de Baranda y Goñi.                     |
+|                                                                              |
+|  This emulator is free software: you can redistribute it and/or modify it    |
+|  under the terms of the GNU Lesser General Public License as published by    |
+|  the Free Software Foundation, either version 3 of the License, or (at your  |
+|  option) any later version.                                                  |
+|                                                                              |
+|  This emulator is distributed in the hope that it will be useful, but        |
+|  WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY  |
+|  or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public      |
+|  License for more details.                                                   |
+|                                                                              |
+|  You should have received a copy of the GNU Lesser General Public License    |
+|  along with this emulator. If not, see <http://www.gnu.org/licenses/>.       |
+|                                                                              |
+'=============================================================================*/
 
-This emulator is free software: you can redistribute it and/or modify it under
-the terms of the GNU General Public License as published  by the Free Software
-Foundation, either  version 3 of  the License, or  (at your option)  any later
-version.
+#ifndef emulation_CPU_6502_H
+#define emulation_CPU_6502_H
 
-This emulator is distributed  in the hope that it will  be useful, but WITHOUT
-ANY WARRANTY; without even the  implied warranty of MERCHANTABILITY or FITNESS
-FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
-
-You should have received  a copy of the GNU General Public License  along with
-this emulator. If not, see <http://www.gnu.org/licenses/>.
---------------------------------------------------------------------------- */
-
-#ifndef _emulation_CPU_6502_H_
-#define _emulation_CPU_6502_H_
-
-#ifdef CPU_6502_DEPENDENCIES_H
-#	include CPU_6502_DEPENDENCIES_H
+#ifdef M6502_CPU_DEPENDENCIES_HEADER
+#	include M6502_CPU_DEPENDENCIES_HEADER
 #else
-#	include <Z/hardware/CPU/architecture/6502.h>
+#	include <Z/macros/language.h>
+#	include <Z/types/integral.h>
 #endif
+
+/**
+  */
+
+typedef zuint8 (* M6502Read)(void *context, zuint16 address);
+
+/**
+  */
+
+typedef void (* M6502Write)(void *context, zuint16 address, zuint8 value);
 
 /** 6502 emulator instance.
   * @details This structure contains the state of the emulated CPU and callback
@@ -36,125 +49,112 @@ this emulator. If not, see <http://www.gnu.org/licenses/>.
 
 typedef struct {
 
-	/** Number of cycles executed in the current call to @c m6502_run.
-	  * @details @c m6502_run sets this variable to @c 0 before starting
-	  * to execute instructions and its value persists after returning.
-	  * The callbacks can use this variable to know during what cycle
-	  * they are being called. */
+	/** @brief The number of clock cycles executed by @c m6502_run.
+	  * @details @c m6502_run sets this member variable to @c 0 before
+	  * starting to execute instructions and its value persists after
+	  * returning. The callbacks can use this to know during what cycle
+	  * they are being called. *//* OK */
 
 	zusize cycles;
 
-	/** The value used as the first argument when calling a callback.
-	  * @details This variable should be initialized before using the
-	  * emulator and can be used to reference the context/instance of
-	  * the machine being emulated. */
+	/** @brief The value of the @c context argument passed to the callbacks.
+	  * @details This member variable can be used to reference the context
+	  * of the machine being emulated. *//* OK */
 
 	void *context;
 
-	/** Callback: Called when the CPU needs to read 8 bits from memory.
-	  * @param context The value of the member @c context.
+	/** @brief Callback invoked when the CPU reads from memory.
+	  * @param context The value of the @c context member variable.
 	  * @param address The memory address to read from.
-	  * @return The 8 bits read from memory. */
+	  * @return An 8-bit value read from memory. *//* OK */
 
 	zuint8 (* read)(void *context, zuint16 address);
 
-	/** Callback: Called when the CPU needs to write 8 bits to memory.
-	  * @param context The value of the member @c context.
+	/** @brief Callback invoked when the CPU writes to memory.
+	  * @param context The value of the @c context member variable.
 	  * @param address The memory address to write to.
-	  * @param value The value to write. */
+	  * @param value The 8-bit value to write. *//* OK */
 
 	void (* write)(void *context, zuint16 address, zuint8 value);
 
-	/** CPU registers and internal bits.
-	  * @details It contains the state of the registers and the interrupt
-	  * flags. This is what a debugger should use as its data source. */
+	zuint16 pc; /**< @brief PC register. */
+	zuint8	s;  /**< @brief S register.  */
+	zuint8	p;  /**< @brief P register.  */
+	zuint8	a;  /**< @brief A register.  */
+	zuint8	x;  /**< @brief X register.  */
+	zuint8	y;  /**< @brief Y register.  */
 
-	Z6502State state;
+	/** @brief State of the @c IRQ line.
+	  **/
+	zuint8 irq;
 
-	/** Temporary storage for memory address resolution.
+	/** @brief State of the @c NMI line.
+	  **/
+
+	zuint8 nmi;
+
+	/** @brief Temporary storage for memory address resolution.
 	  * @details This is an internal private variable. */
 
 	zuint8 opcode;
 
-	/** Temporary storage for the number of cycles consumed by instructions
-	  * requiring memory address resolution.
+	/** @brief Temporary storage for the number of cycles consumed by
+	  * instructions requiring memory address resolution.
 	  * @details This is an internal private variable. */
 
 	zuint8 ea_cycles;
 
-	/** Temporary storage for the resolved memory address.
+	/** @brief Temporary storage for the resolved memory address.
 	  * @details This is an internal private variable. */
 
 	zuint16 ea;
 } M6502;
 
-Z_C_SYMBOLS_BEGIN
-
-#ifndef CPU_6502_API
-#	ifdef CPU_6502_STATIC
-#		define CPU_6502_API
+#ifndef M6502_CPU_API
+#	ifdef M6502_CPU_STATIC
+#		define M6502_CPU_API
 #	else
-#		define CPU_6502_API Z_API
+#		define M6502_CPU_API Z_API_IMPORT
 #	endif
 #endif
 
+Z_EXTERN_C_BEGIN
+
 /** Changes the CPU power status.
-  * @param object A pointer to a 6502 emulator instance.
+  * @param self A pointer to a 6502 emulator instance.
   * @param state @c TRUE = power ON; @c FALSE = power OFF. */
 
-CPU_6502_API void m6502_power(M6502 *object, zboolean state);
+M6502_CPU_API void m6502_power(M6502 *self, zboolean state);
 
 /** Resets the CPU.
   * @details This is equivalent to a pulse on the RESET line of a real 6502.
-  * @param object A pointer to a 6502 emulator instance. */
+  * @param self A pointer to a 6502 emulator instance. */
 
-CPU_6502_API void m6502_reset(M6502 *object);
+M6502_CPU_API void m6502_reset(M6502 *self);
 
 /** Runs the CPU for a given number of @p cycles.
-  * @param object A pointer to a 6502 emulator instance.
+  * @param self A pointer to a 6502 emulator instance.
   * @param cycles The number of cycles to be executed.
   * @return The number of cycles executed.
   * @note Given the fact that one 6502 instruction needs between 2 and 7 cycles
   * to be executed, it's not always possible to run the CPU the exact number of
   * @p cycles specfified. */
 
-CPU_6502_API zusize m6502_run(M6502 *object, zusize cycles);
+M6502_CPU_API zusize m6502_run(M6502 *self, zusize cycles);
 
 /** Performs a non-maskable interrupt (NMI).
   * @details This is equivalent to a pulse on the NMI line of a real 6502.
-  * @param object A pointer to a 6502 emulator instance. */
+  * @param self A pointer to a 6502 emulator instance. */
 
-CPU_6502_API void m6502_nmi(M6502 *object);
+M6502_CPU_API void m6502_nmi(M6502 *self);
 
 /** Changes the state of the maskable interrupt (IRQ).
   * @details This is equivalent to a change on the IRQ line of a real 6502.
-  * @param object A pointer to a 6502 emulator instance.
+  * @param self A pointer to a 6502 emulator instance.
   * @param state @c TRUE = line high; @c FALSE = line low. */
 
-CPU_6502_API void m6502_irq(M6502 *object, zboolean state);
+M6502_CPU_API void m6502_irq(M6502 *self, zboolean state);
 
-Z_C_SYMBOLS_END
+Z_EXTERN_C_END
 
-#ifdef CPU_6502_WITH_ABI
-
-#	ifndef CPU_6502_DEPENDENCIES_H
-#		include <Z/ABIs/generic/emulation.h>
-#	endif
-
-	Z_C_SYMBOLS_BEGIN
-
-#	ifndef CPU_6502_ABI
-#		ifdef CPU_6502_STATIC
-#			define CPU_6502_ABI
-#		else
-#			define CPU_6502_ABI Z_API
-#		endif
-#	endif
-
-	CPU_6502_ABI extern ZCPUEmulatorABI const abi_emulation_cpu_6502;
-
-	Z_C_SYMBOLS_END
-
-#endif
-
-#endif /* _emulation_CPU_6502_H_ */
+#endif /* emulation_CPU_6502_H */
