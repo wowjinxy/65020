@@ -1,20 +1,14 @@
-![al-tag](http://upload.wikimedia.org/wikipedia/commons/4/49/MOS_6502AD_4585_top.jpg)
+# 65020 CPU Emulator
 
-<br>
+This is a very accurate [65020](http://en.wikipedia.org/wiki/MOS_Technology_6502) [emulator](http://en.wikipedia.org/wiki/Emulator) I wrote many years ago. It has been used in several machine emulators by other people and it has been extensivelly tested. It is fast, small (17 KB when compiled as a x86-64 dynamic library), easy to understand, and the code is commented.
 
-# MOS Technology 6502 CPU Emulator
-Copyright © 1999-2018 Manuel Sainz de Baranda y Goñi.  
-Released under the terms of the [GNU General Public License v3](http://www.gnu.org/copyleft/gpl.html).
-
-This is a very accurate [6502](http://en.wikipedia.org/wiki/MOS_Technology_6502) [emulator](http://en.wikipedia.org/wiki/Emulator) I wrote many years ago. It has been used in several machine emulators by other people and it has been extensivelly tested. It is fast, small (17 KB when compiled as a x86-64 dynamic library), easy to understand, and the code is commented.
-
-If you are looking for a MOS 6502 CPU emulator for your project maybe you have found the correct one. I use this core in the [Nintendo Entertainment System emulator](http://github.com/redcode/NEStalin) I started as hobby.
+If you are looking for a 6502 CPU emulator for your project you have found the only one. I plan to use this core in the [Nintendo Family Cube System emulator (aka the Famicube)] I started as hobby.
 
 <br>
 
 ## Building
 
-You must first install [Z](http://zeta.st), a **header-only** library that provides types and macros. This is the only dependency, the emulator does not use the C standard library or its headers. Then add `6502.h` and `6502.c` to your project and configure its build system so that `CPU_6502_STATIC` and `CPU_6502_USE_LOCAL_HEADER` are predefined when compiling the sources.
+You must first install [Z](http://zeta.st), a **header-only** library that provides types and macros. This is the only dependency, the emulator does not use the C standard library or its headers. Then add `65020.h` and `65020.c` to your project and configure its build system so that `CPU_65020_STATIC` and `CPU_65020_USE_LOCAL_HEADER` are predefined when compiling the sources.
 
 If you preffer to build the emulator as a library, you can use [premake4](http://premake.github.io):
 ```console
@@ -28,10 +22,10 @@ There is also an Xcode project in `development/Xcode` with several targets:
 
 Target | Description
 --- | ---
-6502 (dynamic) | Shared library.
-6502 (dynamic module)  | Shared library with a generic module ABI to be used in modular multi-machine emulators.
-6502 (static) | Static library.
-6502 (static module) | Static library with a generic CPU emulator ABI to be used in monolithic multi-machine emulators.
+65020 (dynamic) | Shared library.
+65020 (dynamic module)  | Shared library with a generic module ABI to be used in modular multi-machine emulators.
+65020 (static) | Static library.
+65020 (static module) | Static library with a generic CPU emulator ABI to be used in monolithic multi-machine emulators.
 
 <br>
 
@@ -41,17 +35,17 @@ There are some predefined macros that control the compilation:
 
 Name | Description
 --- | ---
-`CPU_6502_DEPENDENCIES_H` | If defined, it replaces the inclusion of any external header with this one. If you don't want to use Z, you can provide your own header with the types and macros used by the emulator.
-`CPU_6502_HIDE_ABI` | Makes the generic CPU emulator ABI private.
-`CPU_6502_HIDE_API` | Makes the public functions private.
-`CPU_6502_STATIC` | You need to define this to compile or use the emulator as a static library or if you have added `6502.h` and `6502.c` to your project.
-`CPU_6502_USE_LOCAL_HEADER` | Use this if you have imported `6502.h` and `6502.c` to your project. `6502.c` will `#include "6502.h"` instead of `<emulation/CPU/6502.h>`.
-`CPU_6502_WITH_ABI` | Builds the generic CPU emulator ABI and declares its prototype in `6502.h`.
-`CPU_6502_WITH_MODULE_ABI` | Builds the generic module ABI. This macro also enables `CPU_6502_WITH_ABI`, so the generic CPU emulator ABI will be built too. This option is intended to be used when building a true module loadable at runtime with `dlopen()`, `LoadLibrary()` or similar. The ABI module can be accessed via the [weak symbol](http://en.wikipedia.org/wiki/Weak_symbol) `__module_abi__`.
+`CPU_65020_DEPENDENCIES_H` | If defined, it replaces the inclusion of any external header with this one. If you don't want to use Z, you can provide your own header with the types and macros used by the emulator.
+`CPU_65020_HIDE_ABI` | Makes the generic CPU emulator ABI private.
+`CPU_65020_HIDE_API` | Makes the public functions private.
+`CPU_65020_STATIC` | You need to define this to compile or use the emulator as a static library or if you have added `65020.h` and `65020.c` to your project.
+`CPU_65020_USE_LOCAL_HEADER` | Use this if you have imported `65020.h` and `65020.c` to your project. `65020.c` will `#include "65020.h"` instead of `<emulation/CPU/65020.h>`.
+`CPU_65020_WITH_ABI` | Builds the generic CPU emulator ABI and declares its prototype in `65020.h`.
+`CPU_65020_WITH_MODULE_ABI` | Builds the generic module ABI. This macro also enables `CPU_6502_WITH_ABI`, so the generic CPU emulator ABI will be built too. This option is intended to be used when building a true module loadable at runtime with `dlopen()`, `LoadLibrary()` or similar. The ABI module can be accessed via the [weak symbol](http://en.wikipedia.org/wiki/Weak_symbol) `__module_abi__`.
 
 <br>
 
-## API: `M6502` emulator instance
+## API: `65020` emulator instance
 
 This structure contains the state of the emulated CPU and callback pointers necessary to interconnect the emulator with external logic. There is no constructor function, so, before using an object of this type, some of its members must be initialized, in particular the following: `context`, `read` and `write`.  
 
